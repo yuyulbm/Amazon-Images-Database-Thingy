@@ -3,7 +3,7 @@ const app = express();
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 
-app.get("/", (req, res) => { res.send("Hello There.") })
+app.get("/", (_, res) => res.redirect("https://discord.gg/j3YamACwPu"));
 
 app.post("/upload", (req, res) => {
   const binaryDataArray = req.body.binaryDataArray;
