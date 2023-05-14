@@ -1,125 +1,84 @@
-const express = require('express');
-
-const multer = require('multer');
-
-const path = require('path');
-
+const express = require("express");
 const app = express();
+const fs = require("fs");
+const { v4: uuidv4 } = require("uuid");
 
-const storage = multer.diskStorage({
+app.post("/upload", (req, res) => {
+  const binaryDataArray = req.body.binaryDataArray;
 
-  destination: function (req, file, cb) {
+  // Store the generated file IDs
+  const fileIds = [];
 
-    cb(null, 'images/'); // Set the destination folder to "images/"
+  // Process each string binary data in the array
+  binaryDataArray.forEach((stringBinaryData) => {
+    // Convert the string binary data back to binary
+    const binaryData = Buffer.from(stringBinaryData, "base64");
 
-  },
+    // Generate a unique file ID
+    const fileId = generateUniqueFileId();
 
-  filename: function (req, file, cb) {
+    // Upload the binary data to the /images folder with the unique file ID
+    const filePath = `/images/${fileId}.jpg`;
+    fs.writeFile(filePath, binaryData, (err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send("File upload failed");
+      }
 
-    // Generate a unique filename for the uploaded image (e.g., using the 10-character ID)
+      // Save the file ID for reference
+      fileIds.push(fileId);
 
-    const uniqueFilename = generateUniqueFilename(file.originalname);
-
-    cb(null, uniqueFilename);
-
-  }
-
+      // Check if all files have been processed
+      if (fileIds.length === binaryDataArray.length) {
+        // Return the array of file IDs in the response
+        res.json({ fileIds });
+      }
+    });
+  });
 });
 
-const upload = multer({ storage: storage });
+app.get("/image/:fileId", (req, res) => {
+  const fileId = req.params.fileId;
+  const filePath = `/images/${fileId}.jpg`;
 
-app.post('/upload', upload.single('image'), (req, res) => {
+  // Check if the file exists
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send("File not found");
+  }
 
-  res.send('Image uploaded successfully!');
+  // Read the file and send it in the response
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Error reading file");
+    }
 
+    res.setHeader("Content-Type", "image/jpeg");
+    res.send(data);
+  });
 });
 
 app.listen(3000, () => {
-
-  console.log('CDN server is listening on port 3000');
-
+  console.log("CDN server started on port 3000");
 });
 
-const express = require('express');
+function generateUniqueFileId() {
+  let fileId;
+  let isUnique = false;
 
-const multer = require('multer');
+  // Keep generating a new file ID until a unique one is found
+  while (!isUnique) {
+    // Generate a 10-digit random number
+    const randomNumber = Math.floor(1000000000 + Math.random() * 9000000000);
+    fileId = randomNumber.toString();
 
-const path = require('path');
-
-const fs = require('fs');
-
-const app = express();
-
-const storage = multer.diskStorage({
-
-  destination: function (req, file, cb) {
-
-    cb(null, 'images/'); // Set the destination folder to "images/"
-
-  },
-
-  filename: function (req, file, cb) {
-
-    const uniqueFilename = generateUniqueFilename(file.originalname, 10);
-
-    cb(null, uniqueFilename);
-
+    // Check if a file with the same ID already exists
+    const filePath = `/images/${fileId}.jpg`;
+    if (!fs.existsSync(filePath)) {
+      // File ID is unique
+      isUnique = true;
+    }
   }
 
-});
-
-const upload = multer({ storage: storage });
-
-function generateUniqueFilename(originalname, length) {
-
-  const fileExtension = path.extname(originalname);
-
-  let uniqueName;
-
-  let isTaken = true;
-
-  // Loop until a unique ID is generated
-
-  while (isTaken) {
-
-    uniqueName = generateRandomNumber(length) + fileExtension;
-
-    isTaken = isFilenameTaken(uniqueName);
-
-  }
-
-  return uniqueName;
-
+  return fileId;
 }
-
-function generateRandomNumber(length) {
-
-  const min = Math.pow(10, length - 1);
-
-  const max = Math.pow(10, length) - 1;
-
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-
-}
-
-function isFilenameTaken(filename) {
-
-  const imagesDir = path.join(__dirname, 'images');
-
-  const files = fs.readdirSync(imagesDir);
-
-  return files.includes(filename);
-
-}
-
-app.post('/upload', upload.single('image'), (req, res) => {
-
-  res.send('Image uploaded successfully!');
-
-});
-
-app.listen(3000, () => {
-
-  console.log('CDN server is listening on port 3000');
-
-});
