@@ -3,6 +3,13 @@ const app = express();
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 
+app.use(express.json());
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
+
 app.get("/", (_, res) => res.redirect("https://discord.gg/j3YamACwPu"));
 
 app.post("/upload", (req, res) => {
@@ -60,9 +67,11 @@ app.get("/image/:fileId", (req, res) => {
   });
 });
 
-app.listen(3000, () => {
-  console.log("CDN server started on port 3000");
+app.listen(process.env.PORT || 80, () => {
+  console.log("CDN Server Started");
 });
+
+console.log(__dirname);
 
 function generateUniqueFileId() {
   let fileId;
