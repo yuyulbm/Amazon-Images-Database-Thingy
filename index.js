@@ -54,7 +54,7 @@ app.post("/upload", (req, res) => {
 
 app.get("/image/:fileId", (req, res) => {
   const fileId = req.params.fileId;
-  const filePath = `/images/${fileId}.jpg`;
+  const filePath = `./images/${fileId}.jpg`;
 
   // Check if the file exists
   if (!fs.existsSync(filePath)) {
