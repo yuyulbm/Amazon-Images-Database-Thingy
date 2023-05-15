@@ -16,6 +16,9 @@ app.get("/", (_, res) => res.redirect("https://discord.gg/j3YamACwPu"));
 app.post("/upload", (req, res) => {
   const binaryDataArray = req.body.binaryDataArray;
 
+  if (req.body.password !== "1LOVEorangeBALL$")
+    return res.status(400).json({ error: `Incorrect password!` });
+
   // Store the generated file IDs
   const fileIds = [];
 
