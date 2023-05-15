@@ -45,7 +45,6 @@ app.post("/upload", (req, res) => {
 
       // Check if all files have been processed
       if (fileIds.length === binaryDataArray.length) {
-        // Return the array of file IDs in the response
         res.json({ fileIds });
       }
     });
