@@ -15,21 +15,25 @@ app.get("/", (_, res) => res.redirect("https://discord.gg/j3YamACwPu"));
 
 app.post("/upload", (req, res) => {
   const binaryDataArray = req.body.binaryDataArray;
-  console.log(binaryDataArray)
 
   // Store the generated file IDs
   const fileIds = [];
 
   // Process each string binary data in the array
   binaryDataArray.forEach((stringBinaryData) => {
-    // Convert the string binary data back to binary
     const binaryData = Buffer.from(stringBinaryData, "base64");
 
     // Generate a unique file ID
     const fileId = generateUniqueFileId();
 
+    // Create the /images directory if it doesn't exist
+    const directory = "./images";
+    if (!fs.existsSync(directory)) {
+      fs.mkdirSync(directory);
+    }
+
     // Upload the binary data to the /images folder with the unique file ID
-    const filePath = `/images/${fileId}.jpg`;
+    const filePath = `${directory}/${fileId}.jpg`;
     fs.writeFile(filePath, binaryData, (err) => {
       if (err) {
         console.error(err);
