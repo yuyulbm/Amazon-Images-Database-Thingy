@@ -14,6 +14,7 @@ app.get("/", (_, res) => res.redirect("https://discord.gg/j3YamACwPu"));
 
 app.post("/upload", (req, res) => {
   const binaryDataArray = req.body.binaryDataArray;
+  console.log(binaryDataArray)
 
   // Store the generated file IDs
   const fileIds = [];
