@@ -2,47 +2,66 @@ const express = require("express");
 const app = express();
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
-const bodyParser = require("body-parser");
+const multer = require("multer");
 
-app.use(bodyParser.json({ limit: "50mb" }));
-app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "./images");
+  },
+  filename: function (req, file, cb) {
+    const fileId = generateUniqueFileId();
+    const extension = file.originalname.split(".").pop();
+    cb(null, fileId + "." + extension);
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // Increase the file size limit to 50MB
+  },
+  fileFilter: function (req, file, cb) {
+    if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
+      cb(null, true);
+    } else {
+      cb(new Error("Only JPEG and PNG files are allowed."));
+    }
+  },
+});
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (_, res) => res.redirect("https://discord.gg/j3YamACwPu"));
 
-app.post("/upload", (req, res) => {
+app.post("/upload", upload.array("binaryDataArray"), (req, res) => {
   const binaryDataArray = req.body.binaryDataArray;
 
-  if (req.body.password !== "1LOVEorangeBALL$")
-    return res.status(400).json({ error: `Incorrect password!` });
+  if (req.body.password !== "1LOVEorangeBALL$") {
+    return res.status(400).json({ error: "Incorrect password!" });
+  }
 
-  // Store the generated file IDs
   const fileIds = [];
 
-  // Process each string binary data in the array
   binaryDataArray.forEach((stringBinaryData) => {
     const binaryData = Buffer.from(stringBinaryData, "base64");
 
-    // Generate a unique file ID
     const fileId = generateUniqueFileId();
 
-    // Create the /images directory if it doesn't exist
     const directory = "./images";
     if (!fs.existsSync(directory)) {
       fs.mkdirSync(directory);
     }
 
-    // Upload the binary data to the /images folder with the unique file ID
-    const filePath = `${directory}/${fileId}.jpg`;
+    const filePath = `${directory}/${fileId}.${req.files[0].originalname.split(".").pop()}`;
     fs.writeFile(filePath, binaryData, (err) => {
       if (err) {
         console.error(err);
         return res.status(500).send("File upload failed");
       }
 
-      // Save the file ID for reference
       fileIds.push(fileId);
 
-      // Check if all files have been processed
       if (fileIds.length === binaryDataArray.length) {
         res.json({ fileIds });
       }
@@ -52,24 +71,36 @@ app.post("/upload", (req, res) => {
 
 app.get("/image/:fileId", (req, res) => {
   const fileId = req.params.fileId;
-  const filePath = `./images/${fileId}.jpg`;
+  const filePath = `./images/${fileId}.${req.files[0].originalname.split(".").pop()}`;
 
-  // Check if the file exists
   if (!fs.existsSync(filePath)) {
     return res.status(404).send("File not found");
   }
 
-  // Read the file and send it in the response
   fs.readFile(filePath, (err, data) => {
     if (err) {
       console.error(err);
       return res.status(500).send("Error reading file");
     }
 
-    res.setHeader("Content-Type", "image/jpeg");
+    const fileExtension = req.files[0].originalname.split(".").pop();
+    const contentType = getContentType(fileExtension);
+    res.setHeader("Content-Type", contentType);
     res.send(data);
   });
 });
+
+function getContentType(fileExtension) {
+  switch (fileExtension) {
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "png":
+      return "image/png";
+    default:
+      return "application/octet-stream";
+  }
+}
 
 app.listen(process.env.PORT || 80, () => {
   console.log("CDN Server Started");
