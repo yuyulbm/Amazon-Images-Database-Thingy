@@ -48,7 +48,7 @@ app.post("/upload", (req, res) => {
 
       const params = {
         Bucket: bucketName,
-        Key: randomImageName(),
+        Key: randomImageName(10),
         Body: binaryData,
         ContentType: "image/png",
       };
