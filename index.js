@@ -46,9 +46,11 @@ app.post("/upload", (req, res) => {
       return console.log(binaryData);
       // Generate a unique file ID
 
+      const imageName = randomImageName(10);
+
       const params = {
         Bucket: bucketName,
-        Key: randomImageName(10),
+        Key: imageName,
         Body: binaryData,
         ContentType: "image/png",
       };
@@ -57,7 +59,7 @@ app.post("/upload", (req, res) => {
       await s3.send(command);
 
       // Save the file ID for reference
-      fileIds.push(fileId);
+      fileIds.push(imageName);
 
       // Check if all files have been processed
       if (fileIds.length === binaryDataArray.length) {
