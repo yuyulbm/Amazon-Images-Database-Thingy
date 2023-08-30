@@ -2,14 +2,28 @@ const express = require("express");
 const app = express();
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: "50mb" }));
 app.use(
   express.urlencoded({
     extended: true,
-    limit: '50mb'
+    limit: "50mb",
   })
 );
+
+const bucketName = process.env.BUCKET_NAME;
+const bucketRegion = process.env.BUCKET_REGION;
+const secretAccessKey = process.env.SECRET_ACCESS_KEY;
+const accessKey = process.env.ACCESS_KEY;
+
+const s3 = new S3Client({
+  credentials: {
+    accessKeyId: accessKey,
+    secretAccessKey: secretAccessKey,
+  },
+  region: bucketRegion,
+});
 
 app.get("/", (_, res) => res.redirect("https://discord.gg/j3YamACwPu"));
 
@@ -23,25 +37,22 @@ app.post("/upload", (req, res) => {
   const fileIds = [];
 
   // Process each string binary data in the array
-  binaryDataArray.forEach((stringBinaryData) => {
-    const binaryData = Buffer.from(stringBinaryData, "base64");
+  binaryDataArray.forEach(async (stringBinaryData) => {
+    try {
+      const binaryData = Buffer.from(stringBinaryData, "base64");
+      return console.log(binaryData);
+      // Generate a unique file ID
+      const fileId = generateUniqueFileId();
 
-    // Generate a unique file ID
-    const fileId = generateUniqueFileId();
+      const params = {
+        Bucket: bucketName,
+        Key: accessKey,
+        Body: binaryData,
+        ContentType: "image/png",
+      };
 
-    // Create the /images directory if it doesn't exist
-    const directory = "./images";
-    if (!fs.existsSync(directory)) {
-      fs.mkdirSync(directory);
-    }
-
-    // Upload the binary data to the /images folder with the unique file ID
-    const filePath = `${directory}/${fileId}.jpg`;
-    fs.writeFile(filePath, binaryData, (err) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send("File upload failed");
-      }
+      const command = new PutObjectCommand(params);
+      await s3.send(command);
 
       // Save the file ID for reference
       fileIds.push(fileId);
@@ -50,7 +61,10 @@ app.post("/upload", (req, res) => {
       if (fileIds.length === binaryDataArray.length) {
         res.json({ fileIds });
       }
-    });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).send("File upload failed");
+    }
   });
 });
 
