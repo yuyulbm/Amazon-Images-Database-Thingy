@@ -3,6 +3,7 @@ const app = express();
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const crypto = require("crypto");
 
 app.use(express.json({ limit: "50mb" }));
 app.use(
@@ -16,6 +17,8 @@ const bucketName = process.env.BUCKET_NAME;
 const bucketRegion = process.env.BUCKET_REGION;
 const secretAccessKey = process.env.SECRET_ACCESS_KEY;
 const accessKey = process.env.ACCESS_KEY;
+
+const randomImageName = (bytes) => crypto.randomBytes(bytes).toString("hex");
 
 const s3 = new S3Client({
   credentials: {
@@ -42,11 +45,10 @@ app.post("/upload", (req, res) => {
       const binaryData = Buffer.from(stringBinaryData, "base64");
       return console.log(binaryData);
       // Generate a unique file ID
-      const fileId = generateUniqueFileId();
 
       const params = {
         Bucket: bucketName,
-        Key: accessKey,
+        Key: randomImageName(),
         Body: binaryData,
         ContentType: "image/png",
       };
