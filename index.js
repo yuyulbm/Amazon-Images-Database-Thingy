@@ -43,7 +43,6 @@ app.post("/upload", (req, res) => {
   binaryDataArray.forEach(async (stringBinaryData) => {
     try {
       const binaryData = Buffer.from(stringBinaryData, "base64");
-      return console.log(binaryData);
       // Generate a unique file ID
 
       const imageName = randomImageName(10);
