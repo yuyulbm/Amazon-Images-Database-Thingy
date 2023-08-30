@@ -62,6 +62,7 @@ app.post("/upload", (req, res) => {
 
       // Check if all files have been processed
       if (fileIds.length === binaryDataArray.length) {
+        console.log(fileIds);
         return res.json({ fileIds });
       }
     } catch (err) {
