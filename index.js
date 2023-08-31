@@ -2,7 +2,11 @@ const express = require("express");
 const app = express();
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} = require("@aws-sdk/client-s3");
 const crypto = require("crypto");
 
 app.use(express.json({ limit: "50mb" }));
@@ -71,25 +75,27 @@ app.post("/upload", (req, res) => {
   });
 });
 
-app.get("/image/:fileId", (req, res) => {
-  const fileId = req.params.fileId;
-  const filePath = `./images/${fileId}.jpg`;
+app.get("/image/:fileId", async (req, res) => {
+  try {
+    const fileId = req.params.fileId;
 
-  // Check if the file exists
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).send("File not found");
+    const params = {
+      Bucket: bucketName,
+      Key: fileId,
+    };
+
+    const command = new GetObjectCommand(params);
+    const { Body, ContentType } = await s3.send(command);
+
+    // Set the appropriate Content-Type header for the image
+    res.setHeader("Content-Type", ContentType);
+
+    // Send the image data as the response
+    res.send(Body);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send("Failed to retrieve the image");
   }
-
-  // Read the file and send it in the response
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send("Error reading file");
-    }
-
-    res.setHeader("Content-Type", "image/jpeg");
-    res.send(data);
-  });
 });
 
 app.listen(process.env.PORT || 80, () => {
@@ -97,27 +103,6 @@ app.listen(process.env.PORT || 80, () => {
 });
 
 console.log(__dirname);
-
-function generateUniqueFileId() {
-  let fileId;
-  let isUnique = false;
-
-  // Keep generating a new file ID until a unique one is found
-  while (!isUnique) {
-    // Generate a 10-digit random number
-    const randomNumber = Math.floor(1000000000 + Math.random() * 9000000000);
-    fileId = randomNumber.toString();
-
-    // Check if a file with the same ID already exists
-    const filePath = `/images/${fileId}.jpg`;
-    if (!fs.existsSync(filePath)) {
-      // File ID is unique
-      isUnique = true;
-    }
-  }
-
-  return fileId;
-}
 
 process.on("unhandledRejection", (reason, p) => {
   console.log(" [antiCrash] :: Unhandled Rejection/Catch");
