@@ -87,13 +87,13 @@ app.get("/image/:fileId", async (req, res) => {
     const command = new GetObjectCommand(params);
     const { Body, ContentType } = await s3.send(command);
 
-    console.log(Body);
+    console.log(Body.session);
 
     // Set the appropriate Content-Type header for the image
     res.setHeader("Content-Type", ContentType);
 
     // Send the image data as the response
-    res.send(Body);
+    res.send(Body.session);
   } catch (err) {
     console.error(err);
     return res.status(500).send("Failed to retrieve the image");
