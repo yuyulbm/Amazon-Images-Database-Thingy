@@ -7,6 +7,8 @@ const {
   PutObjectCommand,
   GetObjectCommand,
 } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+
 const crypto = require("crypto");
 
 app.use(express.json({ limit: "50mb" }));
@@ -85,15 +87,9 @@ app.get("/image/:fileId", async (req, res) => {
     };
 
     const command = new GetObjectCommand(params);
-    const { Body, ContentType } = await s3.send(command);
+    const url = await getSignedUrl(s3, command, { expiresIn: 60 });
 
-    console.log(Body.session);
-
-    // Set the appropriate Content-Type header for the image
-    res.setHeader("Content-Type", ContentType);
-
-    // Send the image data as the response
-    res.send(Body.session);
+    res.send(url);
   } catch (err) {
     console.error(err);
     return res.status(500).send("Failed to retrieve the image");
