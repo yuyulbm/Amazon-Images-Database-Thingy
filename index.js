@@ -93,7 +93,7 @@ app.get("/image/:fileId", async (req, res) => {
     res.setHeader("Content-Type", ContentType);
 
     // Send the image data as the response
-    res.end(Body);
+    res.send(Body);
   } catch (err) {
     console.error(err);
     return res.status(500).send("Failed to retrieve the image");
