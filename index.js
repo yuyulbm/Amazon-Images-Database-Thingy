@@ -87,7 +87,7 @@ app.get("/image/:fileId", async (req, res) => {
     const command = new GetObjectCommand(params);
     const { Body, ContentType } = await s3.send(command);
 
-    console.log(ContentType);
+    console.log(Body);
 
     // Set the appropriate Content-Type header for the image
     res.setHeader("Content-Type", ContentType);
