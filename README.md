@@ -1,1 +1,1 @@
-This is the code to make a cdn server idk, I use this to upload images and grab them from my amazon database.
+This is the code to make a cdn server idk, I use this to upload images and grab them from my amazon database. This is from a youtube video but I don't remeber it's name, when I find it I will link it here.
